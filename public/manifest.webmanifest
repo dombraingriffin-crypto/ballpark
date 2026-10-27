@@ -1,0 +1,14 @@
+{
+  "name": "Ballpark: The Daily Price-Guessing Game",
+  "short_name": "Ballpark",
+  "description": "Guess the price of five things every day, from a pea to a sports car.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#CFEAFF",
+  "theme_color": "#10233F",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
