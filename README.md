@@ -23,8 +23,13 @@ functions/api/results.js   The results server (Cloudflare Pages Function)
 schema.sql                 Database table for results
 wrangler.toml              Cloudflare project settings
 tools/set-domain.sh        Puts your domain into every file that needs it
+tools/stamp-assets.py      Run after changing anything in public/assets, so players get the new files
 launch-posts.md            Draft posts for launch day
 ```
+
+## Publishing a change
+
+Pushing to GitHub redeploys the site in about ten seconds. If you changed anything in `public/assets` (the game, the styles, the item list or the settings), run `python3 tools/stamp-assets.py` before you commit. Cloudflare and browsers keep those files for hours; the script puts a version on their addresses in the pages so everyone gets the new ones straight away.
 
 ## Try it on your computer
 
