@@ -5,7 +5,7 @@ window.BALLPARK_CONFIG = {
   // Where the results server lives. '/api' works on Cloudflare Pages. Use '' to run with starter players only.
   API_BASE: '/api',
   // Your tip page, e.g. 'https://ko-fi.com/yourname'. A "Leave a tip" link shows on the results screen and in the footer once this is set.
-  TIP_URL: '',
+  TIP_URL: 'https://ko-fi.com/griffindombrain',
   // Turn on only after an ad network has approved the site and its code is in index.html (see README).
   ADS_ENABLED: false,
 };
