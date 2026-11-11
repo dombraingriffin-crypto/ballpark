@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://YOUR-DOMAIN/sitemap.xml
+Sitemap: https://playballparkgame.com/sitemap.xml

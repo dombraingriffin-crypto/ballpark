@@ -6,4 +6,4 @@ compatibility_date = "2025-06-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "ballpark"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "bc292c14-b38a-4e8f-9edb-ecd223b143e9"

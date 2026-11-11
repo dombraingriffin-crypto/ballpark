@@ -22,6 +22,8 @@ public/                 Everything the browser loads
 functions/api/results.js   The results server (Cloudflare Pages Function)
 schema.sql                 Database table for results
 wrangler.toml              Cloudflare project settings
+tools/set-domain.sh        Puts your domain into every file that needs it
+launch-posts.md            Draft posts for launch day
 ```
 
 ## Try it on your computer
@@ -34,8 +36,8 @@ Then open http://localhost:8000. The results server doesn't run this way, so the
 
 ## Before you publish
 
-1. **Pick a domain** and replace `YOUR-DOMAIN` everywhere it appears: `public/index.html`, `about.html`, `privacy.html`, `robots.txt` and `sitemap.xml`.
-2. In `public/assets/config.js`, set `SITE_URL` to your address so shared results include a link.
+1. **Pick a domain**, then run `sh tools/set-domain.sh yourdomain.com`. It replaces `YOUR-DOMAIN` in every page, `robots.txt` and `sitemap.xml`, and sets `SITE_URL` in `public/assets/config.js` so shared results include a link.
+2. Drafts of launch posts are in `launch-posts.md`.
 3. In `privacy.html`, fill in the date and a contact email, and have the policy reviewed.
 4. Check the name: search app stores and the web for other games called "Ballpark".
 5. Spot-check prices marked `approx.` in `items.js`.
@@ -48,7 +50,7 @@ You need a free Cloudflare account and, ideally, this folder in a GitHub reposit
 2. **Create the site.** Go to *Workers & Pages → Create → Pages*, connect your GitHub repository, and set the build output directory to `public` (leave the build command empty).
 3. **Connect the database.** In the Pages project, open *Settings → Bindings*, add a **D1 database** binding named `DB`, and pick `ballpark`. Redeploy.
 4. **Add your domain** under *Custom domains*.
-5. **Check it works:** finish a day, then open `https://YOUR-DOMAIN/api/results?day=YYYY-MM-DD&sig=x|x|x|x|x`. It should return JSON instead of an error.
+5. **Check it works:** finish a day on the live site. The note under "How everyone did" should say "1 real player so far" instead of "The results server didn't answer".
 
 If you prefer the command line, install Node.js and run `npx wrangler pages deploy` from this folder.
 
@@ -71,17 +73,11 @@ Most daily games earn money from display ads, sometimes with a paid "no ads" opt
 
 Later options: a "Ballpark+" tier with unlimited archive and no ads, sponsored themed weeks, or an embeddable widget for news sites.
 
-## Look and color schemes
+## Look and colors
 
-The art is pixel-style and drawn in code, so it always matches the active colors: the sprites (baseball, coin, dollar bill, home-plate logo) and the ballpark banner live in `public/assets/pixel.js`, and item emoji are pixelated on the player's own device.
+The site has one look with a day and a night version; the night version follows the visitor's dark-mode setting. All colors are the tokens in the first two blocks of `public/assets/styles.css` (`--primary` is the green, `--accent` the gold). Type is Bricolage Grotesque for headings and numbers and Instrument Sans for text, both loaded from Google Fonts.
 
-There are three color schemes, each with a day look and a night look (the night look follows the visitor's dark-mode setting):
-
-- **Stadium**: sky blue, outfield green and stitch red; at night, navy under the lights.
-- **Greenback**: dollar-bill greens and gold.
-- **Scoreboard**: concrete grey and hunter green; at night, a dark board with amber bulbs.
-
-The site launches with **Stadium** (`SCHEME` in `config.js`) and the preview buttons hidden (`SHOW_SCHEME_PICKER: false`). To compare schemes again, set `SHOW_SCHEME_PICKER: true`; buttons appear in the footer. The icons (`icon.svg`, `icon-192.png`, `icon-512.png`) and the share image (`og-image.png`) are drawn in Stadium colors, so redraw them if you switch. To change colors, edit the table in `tools/schemes.py` and run `python3 tools/schemes.py`; it rewrites the color section at the top of `styles.css`.
+The logo is a home plate drawn as a price tag. It lives in three places: `MARK` in `app.js`, the inline SVG at the top of `about.html`, `privacy.html` and `404.html`, and `assets/icon.svg`. The PNG icons and `og-image.png` (the picture shown when a link is shared) are rendered from those, so redraw them if you change the colors.
 
 ## Adding items
 
@@ -95,7 +91,8 @@ Fields: emoji, a unique name, a detail line, the US price in dollars, and the pr
 
 ## How the results server works
 
-- When a player finishes, the game sends the date, the day's five item names, their five guesses, their score and an anonymous random ID from their browser. One result per ID per day is kept.
+- When a player finishes, the game sends the date, the day's five item names, their five guesses and an anonymous random ID from their browser. One result per ID per day is kept.
+- The server works out the score itself from `items.js`, so a total can't be faked, and it rejects item names that aren't in the list.
 - The game asks for that day's results and only compares players who priced the same five items.
 - Until 100 real players have finished a day, labeled starter players fill in the comparison.
-- The server checks every field's format, but scores come from the browser and could be faked. For a public leaderboard, have the server recompute scores from `items.js`.
+- Someone could still post made-up guesses that happen to be perfect. Rate limiting (Cloudflare has it built in) is the next step if that ever matters.

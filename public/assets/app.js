@@ -100,30 +100,31 @@ function totalOf(r, its) { return r.guesses.reduce((t, g, i) => t + score(g, its
 
 // ---------- Views ----------
 const app = $('#app');
+const MARK = '<path class="mark-plate" d="M5 3h22a3 3 0 0 1 3 3v11.2a3 3 0 0 1-1.1 2.3l-11 9.1a3 3 0 0 1-3.8 0l-11-9.1A3 3 0 0 1 2 17.2V6a3 3 0 0 1 3-3z"/><g class="mark-glyph" transform="translate(8.2 6.4) scale(.65)" fill="none" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></g>';
+// The logo: home plate as a price tag.
+function logo(size = 30) { const s = svg('svg', { viewBox: '0 0 32 32', width: size, height: size, class: 'mark', 'aria-hidden': 'true' }); s.innerHTML = MARK; return s; }
+const emo = e => h('span', { class: 'emo', 'aria-hidden': 'true' }, e);
+const calm = () => { try { return document.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } };
 function header() {
   return [
     h('div', { class: 'top' },
-      h('div', { class: 'logo' }, Pixel.sprite('plate', 3), h('h1', {}, 'Ballpark')),
+      h('div', { class: 'logo' }, logo(32), h('h1', {}, 'Ballpark')),
       h('div', { class: 'icons' },
         h('button', { class: 'ibtn', type: 'button', 'aria-label': 'How to play', onclick: showHow }, icon('<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14"/><path d="M12 17.5v.01"/>')),
-        h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Past days', onclick: showArchive }, icon('<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')),
+        h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Past days', onclick: showArchive }, icon('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>')),
         h('button', { class: 'ibtn', type: 'button', 'aria-label': 'Your stats', onclick: showStats }, icon('<path d="M5 20V11M12 20V5M19 20v-6"/>')))),
-    banner(),
-    h('div', { class: 'sub' }, h('span', {}, `No. ${day.n} · ${day.label}`), h('span', {}, day.offset === 0 ? 'Today' : 'Practice')),
+    h('div', { class: 'sub' }, h('span', {}, `No. ${day.n}`), h('span', { class: 'sep', 'aria-hidden': 'true' }), h('span', {}, day.label), h('span', { class: 'when' }, day.offset === 0 ? 'Today' : 'Practice')),
   ];
 }
-function banner() { const cv = h('canvas', { class: 'banner-art', width: 160, height: 40, 'aria-hidden': 'true' }); Pixel.drawBanner(cv); return cv; }
-// Progress as a ballpark line score: one inning per item, then the running total.
+// Progress: one chip per item, then the running total.
 function steps(active) {
   const tot = rec.guesses.reduce((t, g, i) => t + score(g, items[i].item[3]), 0);
   const cells = items.map((it, i) => {
     const g = rec.guesses[i];
-    if (g != null) { const p = score(g, it.item[3]); return h('div', { class: `step s${tierOf(p)}`, role: 'listitem', 'aria-label': `Item ${i + 1}: ${p} points` }, String(p)); }
-    return h('div', { class: 'step' + (i === active ? ' now' : ''), role: 'listitem', 'aria-label': `Item ${i + 1}${i === active ? ', now pricing' : ''}` }, i === active ? '$' : '·');
+    if (g != null) { const p = score(g, it.item[3]); return h('div', { class: `step done t${tierOf(p)}`, role: 'listitem', 'aria-label': `Item ${i + 1}: ${p} points` }, String(p)); }
+    return h('div', { class: 'step' + (i === active ? ' now' : ''), role: 'listitem', 'aria-label': `Item ${i + 1}${i === active ? ', now pricing' : ''}` }, String(i + 1));
   });
-  return h('div', { class: 'linescore' },
-    h('div', { class: 'lshead', 'aria-hidden': 'true' }, ...['1', '2', '3', '4', '5', 'TOT'].map(n => h('span', {}, n))),
-    h('div', { class: 'steps', role: 'list', 'aria-label': `Progress, ${tot} points so far` }, ...cells, h('div', { class: 'step tot', role: 'listitem' }, String(tot))));
+  return h('div', { class: 'steps', role: 'list', 'aria-label': `Progress, ${tot} points so far` }, ...cells, h('div', { class: 'step tot', role: 'listitem', 'aria-label': `Total: ${tot} points` }, h('small', {}, 'Total'), String(tot)));
 }
 function render() {
   clearInterval(tickTimer);
@@ -135,7 +136,7 @@ function render() {
   renderGuess(i);
 }
 function renderGuess(i) {
-  const { item: [emo, name, detail], band } = items[i];
+  const { item: [emoji, name, detail], band } = items[i];
   const input = h('input', { id: 'price', type: 'text', inputmode: 'decimal', autocomplete: 'off', placeholder: '0.00', 'aria-label': `Your price for ${name}, in US dollars` });
   const slider = h('input', { id: 'price-slider', class: 'slider', type: 'range', min: 0, max: 1100, value: 450, 'aria-label': 'Price slider, from a hundredth of a cent to ten million dollars' });
   const go = h('button', { class: 'cta', type: 'submit', disabled: true }, 'Lock it in');
@@ -154,39 +155,74 @@ function renderGuess(i) {
     h('div', { class: 'nudges' }, nudge('÷10', 0.1), nudge('÷2', 0.5), nudge('×2', 2), nudge('×10', 10)),
     slider, h('div', { class: 'scale', 'aria-hidden': 'true' }, [['$0.0001', 0], ['$1', 4], ['$1k', 7], ['$1m', 10]].map(([t, d]) => h('span', { style: `left:${(100 * d / 11).toFixed(2)}%` }, t))),
     helper, go);
-  app.append(steps(i), h('section', { class: 'tagcard', 'aria-live': 'polite' }, h('p', { class: 'band' }, `Item ${i + 1} of 5 · ${BAND_NAMES[band]}`), h('div', { class: 'emoji', 'aria-hidden': 'true' }, Pixel.pixelEmoji(emo)), h('h2', { class: 'iname' }, name), h('p', { class: 'idetail' }, detail), form));
+  app.append(steps(i), h('section', { class: 'card', 'aria-live': 'polite' }, h('p', { class: 'band' }, `Item ${i + 1} of 5 · ${BAND_NAMES[band]}`), h('div', { class: 'emoji' }, emo(emoji)), h('h2', { class: 'iname' }, name), h('p', { class: 'idetail' }, detail), form));
   setTimeout(() => input.focus({ preventScroll: true }), 50);
 }
+// The real price rolls from your guess to the answer.
+function countUp(el, from, to) {
+  const done = () => { el.textContent = fmt(to); };
+  if (calm() || from === to) return done();
+  const a = Math.log10(from), b = Math.log10(to), dur = 800, t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / dur);
+    if (k >= 1 || !el.isConnected) return done();
+    el.textContent = fmt(Number((10 ** (a + (b - a) * (1 - (1 - k) ** 3))).toPrecision(3)));
+    requestAnimationFrame(step);
+  };
+  el.textContent = fmt(from); requestAnimationFrame(step); setTimeout(done, dur + 300);
+}
+// How far off the guess was, on a log scale: the real price sits in the middle, 10× off at either end.
+function meter(g, price) {
+  const pos = Math.max(2, Math.min(98, 50 + 50 * Math.log10(g / price)));
+  const pin = h('div', { class: 'pin', style: `left:${calm() ? pos : 50}%` }, h('span', {}, 'You'));
+  setTimeout(() => { pin.style.left = pos + '%'; }, 60);
+  return h('div', { class: 'meter', 'aria-hidden': 'true' },
+    h('div', { class: 'track' }, h('i', { class: 'mid' }), pin),
+    h('div', { class: 'mscale' }, h('span', {}, '10× too low'), h('span', {}, 'Real price'), h('span', {}, '10× too high')));
+}
 function renderReveal(i) {
-  const { item: [emo, name, detail, price, basis] } = items[i], g = rec.guesses[i], p = score(g, price), t = tierOf(p);
-  const next = h('button', { class: 'cta alt', type: 'button', onclick: () => { rec.reveal = null; saveRec(); render(); } }, i < 4 ? 'Next item' : 'Print my receipt');
-  app.append(steps(-1), h('section', { class: 'tagcard', 'aria-live': 'polite' },
-    h('div', { class: 'emoji sm', 'aria-hidden': 'true' }, Pixel.pixelEmoji(emo)), h('h2', { class: 'iname' }, name), h('p', { class: 'idetail' }, detail),
-    h('div', { class: 'bill anim' }, Pixel.sprite('coin', 3), h('span', {}, fmt(price)), Pixel.sprite('coin', 3)),
-    h('p', { class: 'yours' }, `You said ${fmt(g)}`),
-    h('div', { class: 'verdict' }, h('span', { class: 'pts' }, `+${p}`), h('span', { class: `pill p${t}` }, verdictOf(g, price))),
+  const { item: [emoji, name, detail, price, basis] } = items[i], g = rec.guesses[i], p = score(g, price), t = tierOf(p);
+  const next = h('button', { class: 'cta alt', type: 'button', onclick: () => { rec.reveal = null; saveRec(); render(); } }, i < 4 ? 'Next item' : 'See my results');
+  const real = h('p', { class: 'realprice num', 'aria-label': `Real price: ${fmt(price)}` }, fmt(price));
+  app.append(steps(-1), h('section', { class: 'card', 'aria-live': 'polite' },
+    h('div', { class: 'emoji sm' }, emo(emoji)), h('h2', { class: 'iname' }, name), h('p', { class: 'idetail' }, detail),
+    h('p', { class: 'reallabel' }, 'Real price'), real,
+    h('p', { class: 'yours' }, 'You said ', h('b', { class: 'num' }, fmt(g))),
+    meter(g, price),
+    h('div', { class: `verdict anim t${t}` }, h('span', { class: 'pts num' }, `+${p}`), h('span', { class: 'pill' }, verdictOf(g, price))),
     h('p', { class: 'basis' }, `Price basis: ${basis}`), next));
+  countUp(real, g, price);
   setTimeout(() => next.focus({ preventScroll: true }), 50);
+}
+// The day's total as a ring that fills toward 500.
+function scoreRing(total) {
+  const C = 2 * Math.PI * 52, s = svg('svg', { viewBox: '0 0 120 120', 'aria-hidden': 'true' });
+  const fg = svg('circle', { class: 'rfg', cx: 60, cy: 60, r: 52, 'stroke-dasharray': C.toFixed(1), 'stroke-dashoffset': (calm() ? C * (1 - total / 500) : C).toFixed(1) });
+  s.append(svg('circle', { class: 'rbg', cx: 60, cy: 60, r: 52 }), fg);
+  setTimeout(() => fg.setAttribute('stroke-dashoffset', (C * (1 - total / 500)).toFixed(1)), 80);
+  return h('div', { class: 'ring', role: 'img', 'aria-label': `${total} out of 500 points` }, s, h('div', {}, h('b', { class: 'num' }, String(total)), h('span', {}, 'out of 500')));
 }
 function renderResults() {
   const total = totalOf(rec, items), grid = items.map((it, i) => EMOJI[tierOf(score(rec.guesses[i], it.item[3]))]).join('');
   if (!rec.done) { rec.done = true; rec.total = total; saveRec(); }
   const share = `Ballpark No. ${day.n} · ${total}/500\n${grid}\n${rankOf(total)}${CONFIG.SITE_URL ? '\n' + CONFIG.SITE_URL : ''}`;
-  const copyBtn = h('button', { class: 'btn primary', type: 'button', onclick: () => {
+  const canShare = typeof navigator.share === 'function';
+  const copyBtn = h('button', { class: 'btn' + (canShare ? '' : ' primary'), type: 'button', onclick: () => {
     const ok = () => { copyBtn.textContent = 'Copied'; setTimeout(() => { copyBtn.textContent = 'Copy result'; }, 1600); };
     const fail = () => { const s = getSelection(), rg = document.createRange(); rg.selectNodeContents(gridEl); s.removeAllRanges(); s.addRange(rg); copyBtn.textContent = 'Press Ctrl+C'; };
     try { navigator.clipboard.writeText(share).then(ok, fail); } catch (e) { fail(); }
   } }, 'Copy result');
+  // Phones get the system share sheet; everywhere else, copying is the main action.
+  const shareBtn = canShare ? h('button', { class: 'btn primary', type: 'button', onclick: () => { navigator.share({ text: share }).catch(() => {}); } }, 'Share') : null;
   const gridEl = h('p', { class: 'grid', 'aria-label': 'Score squares' }, grid);
-  const receipt = h('section', { class: 'receipt', 'aria-label': 'Your receipt' },
-    h('div', { class: 'rhead' }, Pixel.sprite('ball', 4), h('h2', {}, 'Ballpark'), h('p', {}, `No. ${day.n} · ${day.label}`)), h('div', { class: 'dash' }),
-    ...items.map((it, i) => { const [emo, name, , price] = it.item, g = rec.guesses[i], p = score(g, price); return h('div', { class: 'rrow' }, h('span', { class: 'e', 'aria-hidden': 'true' }, Pixel.pixelEmoji(emo, 16)), h('div', {}, h('div', { class: 'n' }, name), h('div', { class: 'm' }, `Real ${fmt(price)} · you ${fmt(g)}`)), h('span', { class: 'p num' }, `+${p}`)); }),
-    h('div', { class: 'dash' }), h('div', { class: 'total' }, h('span', {}, 'TOTAL'), h('b', { class: 'num' }, `${total}/500`)), h('p', { class: 'rank' }, rankOf(total)), gridEl);
+  const hero = h('section', { class: 'card hero', 'aria-label': 'Your score' }, scoreRing(total), h('h2', { class: 'rank' }, rankOf(total)), h('p', { class: 'herosub' }, `Ballpark No. ${day.n} · ${day.label}`), gridEl);
+  const receipt = h('section', { class: 'card receipt', 'aria-label': 'Your receipt' },
+    ...items.map((it, i) => { const [emoji, name, , price] = it.item, g = rec.guesses[i], p = score(g, price); return h('div', { class: 'rrow' }, h('span', { class: 'e emo', 'aria-hidden': 'true' }, emoji), h('div', {}, h('div', { class: 'n' }, name), h('div', { class: 'm num' }, `Real ${fmt(price)} · you ${fmt(g)}`)), h('span', { class: `p num t${tierOf(p)}` }, `+${p}`)); }));
   const crowd = h('section', { class: 'panel', 'aria-live': 'polite' }, h('h3', {}, 'How everyone did'), h('p', { class: 'note' }, 'Loading the crowd…'));
   const cd = h('p', { class: 'countdown' }, 'Next prices in', h('b', { class: 'num' }, '--:--:--'));
   const tick = () => { const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0); const s = Math.max(0, Math.floor((mid - now) / 1000)); cd.lastChild.textContent = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
   tick(); tickTimer = setInterval(tick, 1000);
-  app.append(steps(-1), receipt, h('div', { class: 'actions' }, copyBtn, h('button', { class: 'btn', type: 'button', onclick: showStats }, 'Your stats')), crowd, adSlot('results'), cd);
+  app.append(...[steps(-1), hero, h('div', { class: 'actions' }, shareBtn, copyBtn, h('button', { class: 'btn', type: 'button', onclick: showStats }, 'Your stats')), receipt, crowd, adSlot('results'), cd].filter(Boolean));
   loadCrowd(crowd, total);
 }
 async function loadCrowd(panel, total) {
@@ -198,18 +234,18 @@ async function loadCrowd(panel, total) {
     const pctBeat = Math.round(100 * beat / Math.max(1, totals.length));
     const bins = Array(10).fill(0); totals.forEach(t => bins[Math.min(9, Math.floor(t / 50))]++); const mx = Math.max(1, ...bins), myBin = Math.min(9, Math.floor(total / 50));
     const hist = svg('svg', { class: 'hist', viewBox: '0 0 320 110', role: 'img', 'aria-label': `Score distribution. You beat ${pctBeat}% of players.` });
-    bins.forEach((b, i) => hist.append(svg('rect', { x: 4 + i * 31.5, y: 88 - 80 * b / mx, width: 27, height: Math.max(1, 80 * b / mx), rx: 3, class: 'hbar' + (i === myBin ? ' me' : '') })));
+    bins.forEach((b, i) => hist.append(svg('rect', { x: 4 + i * 31.5, y: 88 - 80 * b / mx, width: 27, height: Math.max(1, 80 * b / mx), rx: 6, class: 'hbar' + (i === myBin ? ' me' : '') })));
     [['0', 4], ['250', 152], ['500', 296]].forEach(([t, x]) => { const e = svg('text', { x, y: 104, class: 'axis' }); e.textContent = t; hist.append(e); });
     const med = i => { const v = pool.map(p => p.guesses && p.guesses[i]).filter(x => x > 0).sort((a, b) => a - b); return v.length ? v[Math.floor(v.length / 2)] : NaN; };
     panel.replaceChildren(h('h3', {}, 'How everyone did'),
       h('p', {}, `You beat ${pctBeat}% of players today.`), hist,
       h('div', { class: 'ctable' }, h('div', { class: 'crow note' }, h('span'), h('span', {}, 'Item'), h('span', {}, 'Crowd guess'), h('span', {}, 'Real')),
-        ...items.map((it, i) => h('div', { class: 'crow' }, h('span', { 'aria-hidden': 'true' }, Pixel.pixelEmoji(it.item[0], 16)), h('span', {}, it.item[1]), h('span', { class: 'mono muted' }, fmt(med(i))), h('span', { class: 'mono' }, fmt(it.item[3]))))),
+        ...items.map((it, i) => h('div', { class: 'crow' }, emo(it.item[0]), h('span', {}, it.item[1]), h('span', { class: 'mono muted' }, fmt(med(i))), h('span', { class: 'mono' }, fmt(it.item[3]))))),
       h('p', { class: 'note' }, note + (need ? ` Includes ${need} starter players modeled on how people usually misjudge prices; they drop out as real players finish.` : '')));
   };
   if (!CONFIG.API_BASE) return draw([], 'The results server isn’t set up yet, so you’re compared with starter players only.');
   if (!rec.sent) {
-    try { await api('/results', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ day: day.key, sig, player: playerId(), guesses: rec.guesses, total }) }); rec.sent = true; saveRec(); }
+    try { await api('/results', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ day: day.key, sig, player: playerId(), guesses: rec.guesses }) }); rec.sent = true; saveRec(); }
     catch (e) { /* still show everyone else's results below */ }
   }
   try {
@@ -240,7 +276,7 @@ function modal(title, ...body) {
   return close;
 }
 function showHow() {
-  modal('How to play', h('div', { class: 'how', style: 'display:grid;gap:12px' },
+  modal('How to play', h('div', { class: 'how' },
     h('p', {}, 'Every day there are five things to price, one from each range: pocket change, everyday, splurge, big purchase and life savings. Everyone gets the same five.'),
     h('p', {}, 'Type a price in US dollars or drag the slider. The slider jumps by powers of ten, so you can get from a penny to a Porsche in one swipe. Use ÷2 and ×2 to fine-tune.'),
     h('p', {}, 'You score by how close you are in ratio, not dollars, so missing a pea by 2× hurts exactly as much as missing a car by 2×.'),
@@ -279,23 +315,6 @@ function goDay(offset) {
   render(); window.scrollTo(0, 0);
 }
 
-// ---------- Color schemes ----------
-// The visitor's saved scheme wins; otherwise CONFIG.SCHEME. The picker in the footer is for choosing one before launch.
-function schemePicker() {
-  const root = $('#scheme-picker'); if (!root) return;
-  if (!CONFIG.SHOW_SCHEME_PICKER) { root.hidden = true; return; }
-  const current = document.documentElement.getAttribute('data-scheme') || 'stadium';
-  root.hidden = false;
-  root.replaceChildren(h('p', {}, 'Color scheme (preview)'), h('div', { class: 'schemes' }, Pixel.SCHEMES.map(s => h('button', { type: 'button', class: 'schemebtn', 'aria-pressed': s.id === current ? 'true' : 'false', onclick: () => Pixel.setScheme(s.id) },
-    h('span', { class: 'swatches', 'aria-hidden': 'true' }, s.swatch.map(c => h('i', { style: `background:${c}` }))), s.name))));
-}
-if (CONFIG.SHOW_SCHEME_PICKER) Pixel.setScheme(Pixel.getScheme() || CONFIG.SCHEME || 'stadium', false);
-else { Pixel.clearScheme(); Pixel.setScheme(CONFIG.SCHEME || 'stadium', false); } // a scheme saved while previewing never overrides the launch scheme
-// Redraw when the scheme or the light/dark setting changes, since the banner and sprites read the colors.
-document.addEventListener('schemechange', () => { render(); schemePicker(); });
-try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render()); } catch (e) {}
-
 // ---------- Boot ----------
-schemePicker();
 goDay(0);
 if (!store.get('seenHow', false)) { store.set('seenHow', true); showHow(); }
