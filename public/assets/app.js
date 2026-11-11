@@ -70,7 +70,7 @@ const toSlider = p => Math.max(0, Math.min(1100, Math.round((Math.log10(p) + 4) 
 
 // ---------- Results server (optional) ----------
 // CONFIG comes from config.js. With no API_BASE, the crowd panel uses starter players only.
-const CONFIG = Object.assign({ SITE_URL: '', API_BASE: '', ADS_ENABLED: false }, window.BALLPARK_CONFIG || {});
+const CONFIG = Object.assign({ SITE_URL: '', API_BASE: '', ADS_ENABLED: false, TIP_URL: '' }, window.BALLPARK_CONFIG || {});
 // An anonymous random id, so the server keeps one result per browser per day. It identifies nobody.
 function playerId() {
   let id = store.get('player', null);
@@ -225,7 +225,7 @@ function renderResults() {
   const cd = h('p', { class: 'countdown' }, 'Next prices in', h('b', { class: 'num' }, '--:--:--'));
   const tick = () => { const now = new Date(), mid = new Date(now); mid.setHours(24, 0, 0, 0); const s = Math.max(0, Math.floor((mid - now) / 1000)); cd.lastChild.textContent = [Math.floor(s / 3600), Math.floor(s / 60) % 60, s % 60].map(x => String(x).padStart(2, '0')).join(':'); };
   tick(); tickTimer = setInterval(tick, 1000);
-  app.append(...[steps(-1), hero, h('div', { class: 'actions' }, shareBtn, copyBtn, h('button', { class: 'btn', type: 'button', onclick: showStats }, 'Your stats')), receipt, crowd, adSlot('results'), cd].filter(Boolean));
+  app.append(...[steps(-1), hero, h('div', { class: 'actions' }, shareBtn, copyBtn, h('button', { class: 'btn', type: 'button', onclick: showStats }, 'Your stats')), receipt, crowd, adSlot('results'), tipJar(), cd].filter(Boolean));
   loadCrowd(crowd, total);
 }
 async function loadCrowd(panel, total) {
@@ -269,6 +269,14 @@ function withAlldle(f) {
   if (tag) tag.addEventListener('load', run, { once: true });
 }
 const WIN_AT = 300; // Alldle wants a win or a loss; 300 is the "Right ballpark" rank
+
+// ---------- Tips ----------
+// A link to the maker's tip page. Nothing shows until TIP_URL is set in config.js.
+const tipUrl = () => /^https:\/\//.test(CONFIG.TIP_URL) ? CONFIG.TIP_URL : '';
+function tipJar() {
+  if (!tipUrl()) return null;
+  return h('a', { class: 'tip', href: tipUrl(), target: '_blank', rel: 'noopener' }, emo('☕'), h('span', {}, h('b', {}, 'Enjoying Ballpark?'), ' Leave a tip to keep it free'));
+}
 
 // ---------- Ads ----------
 // Reserved space for one ad on the results screen. Nothing shows until ADS_ENABLED is true in config.js
@@ -331,5 +339,6 @@ function goDay(offset) {
 
 // ---------- Boot ----------
 goDay(0);
+if (tipUrl()) { const nav = $('.footlinks'); if (nav) nav.append(h('a', { href: tipUrl(), target: '_blank', rel: 'noopener' }, 'Leave a tip')); }
 if (!rec.guesses.length) withAlldle(a => a.startMode('classic', { puzzleId: String(day.n) })); // a fresh round of today's prices
 if (!store.get('seenHow', false)) { store.set('seenHow', true); showHow(); }

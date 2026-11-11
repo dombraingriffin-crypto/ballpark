@@ -164,6 +164,9 @@ a{color:inherit; text-underline-offset:3px}
 .hbar{fill:color-mix(in srgb,var(--muted) 28%,var(--surface))} .hbar.me{fill:var(--primary)}
 .axis{font:600 11px var(--f-body); fill:var(--muted)}
 .note{font-size:12px; color:var(--muted)}
+.tip{display:flex; align-items:center; justify-content:center; gap:10px; padding:13px 16px; border-radius:var(--r-md); border:1px dashed color-mix(in srgb,var(--accent) 70%,var(--line)); background:color-mix(in srgb,var(--accent) 12%,var(--surface)); color:var(--ink); text-decoration:none; font-size:14px; transition:transform .12s, background .12s}
+.tip:hover{background:color-mix(in srgb,var(--accent) 22%,var(--surface)); transform:translateY(-1px)}
+.tip .emo{font-size:20px}
 .countdown{text-align:center; font-size:13px; font-weight:600; color:var(--muted)}
 .countdown b{font:800 30px var(--f-display); letter-spacing:-.01em; color:var(--ink); display:block}
 
