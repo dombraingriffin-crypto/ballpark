@@ -204,7 +204,10 @@ function scoreRing(total) {
 }
 function renderResults() {
   const total = totalOf(rec, items), grid = items.map((it, i) => EMOJI[tierOf(score(rec.guesses[i], it.item[3]))]).join('');
-  if (!rec.done) { rec.done = true; rec.total = total; saveRec(); }
+  if (!rec.done) {
+    rec.done = true; rec.total = total; saveRec();
+    if (day.offset === 0) withAlldle(a => a.completeMode('classic', { won: total >= WIN_AT, score: total, resultGrid: grid, puzzleId: String(day.n) }));
+  }
   const share = `Ballpark No. ${day.n} · ${total}/500\n${grid}\n${rankOf(total)}${CONFIG.SITE_URL ? '\n' + CONFIG.SITE_URL : ''}`;
   const canShare = typeof navigator.share === 'function';
   const copyBtn = h('button', { class: 'btn' + (canShare ? '' : ' primary'), type: 'button', onclick: () => {
@@ -255,6 +258,17 @@ async function loadCrowd(panel, total) {
     draw(real, `${real.length} real player${real.length === 1 ? '' : 's'} so far.`);
   } catch (e) { draw([], 'The results server didn’t answer, so you’re compared with starter players only.'); }
 }
+
+// ---------- Alldle ----------
+// Alldle is a directory of daily games. Its script (loaded in index.html) lets a finished round count on a player's
+// Alldle list and shows the maker how each day went. It may load late or be blocked, so every call waits for it.
+function withAlldle(f) {
+  const run = () => { try { if (window.alldle) f(window.alldle); } catch (e) {} };
+  if (window.alldle) return run();
+  const tag = document.getElementById('alldle-sdk');
+  if (tag) tag.addEventListener('load', run, { once: true });
+}
+const WIN_AT = 300; // Alldle wants a win or a loss; 300 is the "Right ballpark" rank
 
 // ---------- Ads ----------
 // Reserved space for one ad on the results screen. Nothing shows until ADS_ENABLED is true in config.js
@@ -317,4 +331,5 @@ function goDay(offset) {
 
 // ---------- Boot ----------
 goDay(0);
+if (!rec.guesses.length) withAlldle(a => a.startMode('classic', { puzzleId: String(day.n) })); // a fresh round of today's prices
 if (!store.get('seenHow', false)) { store.set('seenHow', true); showHow(); }
